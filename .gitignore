@@ -1,0 +1,27 @@
+# Build outputs
+*.o
+*.obj
+*.bin
+*.elf
+*.out
+*.exe
+
+# NASM listing/debug files
+*.lst
+*.map
+
+# Make artifacts
+*.d
+.depend
+
+# Build directories
+build/
+bin/
+obj/
+
+# Editor/OS cruft
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
