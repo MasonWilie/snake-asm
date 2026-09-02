@@ -51,7 +51,7 @@ global Screen_PlaceSnakeNode
 ; Returns: rax = size of a Screen object
 ;-----------------------------
 Screen_GetSize:
-    mov rax, Screen_size
+    mov eax, Screen_size
     ret
 
 ;-----------------------------
@@ -65,6 +65,8 @@ Screen_GetSize:
 ;-----------------------------
 Screen_ctor:
     push r12
+    sub rsp, 8
+
     mov r12, rdi
 
     mov [r12 + Screen_resX], esi
@@ -79,6 +81,7 @@ Screen_ctor:
 
     mov [r12 + Screen_buffer], rax
 
+    add rsp, 8
     pop r12
     ret
 
@@ -89,7 +92,9 @@ Screen_ctor:
 ; Returns: None
 ;-----------------------------
 Screen_dtor:
-    push r12                            ; r12 = this
+    push r12
+    sub rsp, 8
+
     mov r12, rdi
 
     mov rdi, [r12 + Screen_buffer]
@@ -97,6 +102,7 @@ Screen_dtor:
 
     call dealloc
 
+    add rsp, 8
     pop r12
     ret
 
@@ -148,20 +154,23 @@ Screen_Clear:
 ;-----------------------------
 Screen_Draw:
     push r12
+    sub rsp, 8
+
     mov r12, rdi                        ; r12 = this*
 
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
+    mov eax, SYS_WRITE
+    mov edi, STDOUT
     mov rsi, cursor_home
-    mov rdx, cursor_home_len
+    mov edx, cursor_home_len
     syscall
 
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
+    mov eax, SYS_WRITE
+    mov edi, STDOUT
     mov rsi, [r12 + Screen_buffer]
     mov edx, dword [r12 + Screen_buffer_size]
     syscall
 
+    add rsp, 8
     pop r12
 
     ret
