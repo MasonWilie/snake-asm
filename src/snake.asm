@@ -58,7 +58,7 @@ Snake_ctor:
     mov [rdi + Snake_maxY], r8d
 
     ; Allocate an uninitialized section of memory for the head node
-    mov rdi, SnakeNode_size
+    mov edi, SnakeNode_size
     call alloc
     mov qword [rbx + Snake_head], rax
 
@@ -82,10 +82,13 @@ Snake_ctor:
 ; Returns: None
 ;-----------------------------
 Snake_dtor:
+    sub rsp, 8
+
     mov rdi, qword [rdi + Snake_head]
-    mov rsi, SnakeNode_size
+    mov esi, SnakeNode_size
     call dealloc
 
+    add rsp, 8
     ret
 
 ;-----------------------------
@@ -95,6 +98,8 @@ Snake_dtor:
 ; Returns: rax = result
 ;-----------------------------
 Snake_Update:
+    push rbx
+
     mov rbx, rdi
 
     call Snake_TrySetDirection
@@ -102,6 +107,7 @@ Snake_Update:
     mov rdi, rbx
     call Snake_UpdatePositions
 
+    pop rbx
     ret
 
 ;-----------------------------
@@ -113,14 +119,21 @@ Snake_Update:
 ; Returns: None
 ;-----------------------------
 Snake_TrySetDirection:
+    push r12
+    push r13
+    sub rsp, 8
+
+    mov r12, rdi
+    mov r13d, esi
+
     ; Don't update if new direction is invalid
-    cmp sil, SnakeDirection_INVALID
+    cmp r13b, SnakeDirection_INVALID
     je .exit
 
-    mov rcx, qword [rdi + Snake_head]               ; rcx = SnakeNode* head
+    mov rcx, qword [r12 + Snake_head]               ; rcx = SnakeNode* head
 
     ; If the direction doesn't actually change, move on
-    cmp sil, [rcx + SnakeNode_direction]
+    cmp r13b, [rcx + SnakeNode_direction]
     je .exit
 
     mov rdx, qword [rcx + SnakeNode_nextNode]       ; rdx = head->nextNode
@@ -131,17 +144,21 @@ Snake_TrySetDirection:
 
     ; Check to see if the new direction conflicts with the next node
     mov dil, [rdx + SnakeNode_direction]
+    mov sil, r13b
     call SnakeNode_ConflictingDirections
     test al, al
     jnz .exit
 
     ; Recompute head address because it was clobbered
-    mov rcx, [rdi + Snake_head]
+    mov rcx, [r12 + Snake_head]
 
 .set_direction:
-    mov byte [rcx + SnakeNode_direction], sil
+    mov byte [rcx + SnakeNode_direction], r13b
 
 .exit:
+    add rsp, 8
+    pop r13
+    pop r12
     ret
 
 ;-----------------------------
@@ -188,6 +205,7 @@ Snake_UpdatePositions:
 Snake_Draw:
     push r12 ; function pointer
     push r13 ; Node ptr
+    sub rsp, 8
 
     mov r12, rsi
     mov r13, [rdi + Snake_head]
@@ -208,6 +226,7 @@ Snake_Draw:
 ; end loop
 
 .exit:
+    add rsp, 8
     pop r13
     pop r12
 
