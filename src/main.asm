@@ -85,10 +85,10 @@ _start:
     mov rdi, [screen_ptr]
     call Screen_Clear
 
-    call read_user_input
+    call read_user_input        ; al = new direction
 
-    mov rdi, [snake_ptr]
     mov sil, al
+    mov rdi, [snake_ptr]
     call Snake_Update
 
     mov rdi, [snake_ptr]
