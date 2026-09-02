@@ -27,22 +27,13 @@ SYS_EXIT equ 60
 SIGINT equ 2
 
 ; Screen Constants
-SCREEN_BACKGROUND_CHAR equ ' '
 RES_X equ 30
 RES_Y equ 10
-RES_X_EFF equ RES_X + 1
-
-
-SNAKE_SYMBOL equ '#'
 
 section .bss
     snake_ptr resb 8
     screen_ptr resb 8
     running_flag resb 1
-
-section .data
-    cursor_home db 27, "[H"
-    cursor_home_len equ $ - cursor_home
 
 section .text
 
