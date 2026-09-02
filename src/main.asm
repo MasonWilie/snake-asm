@@ -31,8 +31,8 @@ RES_X equ 30
 RES_Y equ 10
 
 section .bss
-    snake_ptr resb 8
-    screen_ptr resb 8
+    snake_ptr resq 1
+    screen_ptr resq 1
     running_flag resb 1
 
 section .text
@@ -45,19 +45,22 @@ extern sig_install
 global _start
 
 _start:
+    and rsp, -16
+    sub rsp, 8
+
     ; Set up signal and raw input handler
-    mov rdi, SIGINT
+    mov edi, SIGINT
     lea rsi, [rel sigint_handler]
     call sig_install
     call enable_raw_input
 
     ; Alloc snake
-    mov rdi, Snake_size
+    mov edi, Snake_size
     call alloc
-    mov [snake_ptr], rax
+    mov [rel snake_ptr], rax
 
     ; Construct snake
-    mov rdi, [snake_ptr]
+    mov rdi, [rel snake_ptr]
     mov esi, RES_X / 2              ; Initial x
     mov edx, RES_Y / 2              ; Initial y
     mov ecx, RES_X - 1              ; Max x
@@ -68,10 +71,10 @@ _start:
     call Screen_GetSize
     mov rdi, rax
     call alloc
-    mov [screen_ptr], rax
+    mov [rel screen_ptr], rax
 
     ; Construct Screen
-    mov rdi, [screen_ptr]
+    mov rdi, [rel screen_ptr]
     mov esi, RES_X
     mov edx, RES_Y
     call Screen_ctor
@@ -79,27 +82,27 @@ _start:
     mov byte [rel running_flag], 1
 
 .game_loop:
-    cmp byte [running_flag], 1
+    cmp byte [rel running_flag], 1
     jne .exit
 
-    mov rdi, [screen_ptr]
+    mov rdi, [rel screen_ptr]
     call Screen_Clear
 
     call read_user_input        ; al = new direction
 
     mov sil, al
-    mov rdi, [snake_ptr]
+    mov rdi, [rel snake_ptr]
     call Snake_Update
 
-    mov rdi, [snake_ptr]
+    mov rdi, [rel snake_ptr]
     lea rsi, [rel draw_snake_node]
     call Snake_Draw
 
-    mov rdi, [screen_ptr]
+    mov rdi, [rel screen_ptr]
     call Screen_Draw
 
     ; Sleep
-    mov rdi, 300
+    mov edi, 300
     call sleep_ms
 
     jmp .game_loop
@@ -109,24 +112,24 @@ _start:
     call disable_raw_input
 
     ; Deconstruct screen
-    mov rdi, [screen_ptr]
+    mov rdi, [rel screen_ptr]
     call Screen_dtor
 
     ; Deallocate screen
-    mov rdi, [snake_ptr]
+    mov rdi, [rel screen_ptr]
     call dealloc
 
     ; Deconstruct snake
-    mov rdi, [snake_ptr]
+    mov rdi, [rel snake_ptr]
     call Snake_dtor
 
     ; Deallocate snake
-    mov rdi, [snake_ptr]
+    mov rdi, [rel snake_ptr]
     call dealloc
 
     ;; exit
-    mov rax, SYS_EXIT
-    xor rdi, rdi
+    mov eax, SYS_EXIT
+    xor edi, edi
     syscall
 
 sigint_handler:
@@ -140,8 +143,12 @@ sigint_handler:
 ; Returns: None
 ;-----------------------------
 draw_snake_node:
+    sub rsp, 8
+
     mov edx, esi
     mov esi, edi
-    mov rdi, [screen_ptr]
+    mov rdi, [rel screen_ptr]
     call Screen_PlaceSnakeNode
+
+    add rsp, 8
     ret
