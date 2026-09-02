@@ -180,7 +180,7 @@ Snake_UpdatePositions:
     ret
 
 ;-----------------------------
-; Function: Snake_Drwa
+; Function: Snake_Draw
 ; Description: Draw the snake node
 ; Args: rdi = this, rsi = Function ptr
 ; Returns: rax = result

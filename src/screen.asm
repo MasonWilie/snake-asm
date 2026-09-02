@@ -31,11 +31,11 @@ NEWLINE_CHAR equ 10
 SCREEN_BACKGROUND_CHAR equ ' '
 SNAKE_SEGMENT_CHAR equ '#'
 
-section .data:
+section .data
     cursor_home db 27, "[H"
     cursor_home_len equ $ - cursor_home
 
-section .text:
+section .text
 
 global Screen_GetSize
 global Screen_ctor
@@ -94,6 +94,8 @@ Screen_dtor:
 
     mov rdi, [r12 + Screen_buffer]
     mov rsi, [r12 + Screen_buffer_size]
+
+    call dealloc
 
     pop r12
     ret

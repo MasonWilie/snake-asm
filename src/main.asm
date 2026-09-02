@@ -11,6 +11,13 @@ extern Snake_Draw
 extern alloc
 extern dealloc
 
+; screen.asm
+extern Screen_GetSize
+extern Screen_ctor
+extern Screen_dtor
+extern Screen_PlaceSnakeNode
+extern Screen_Clear
+extern Screen_Draw
 
 ; Helper Constants
 SYS_EXIT equ 60
@@ -23,7 +30,7 @@ SIGINT equ 2
 
 ; Screen Constants
 SCREEN_BACKGROUND_CHAR equ ' '
-RES_X equ 150
+RES_X equ 30
 RES_Y equ 10
 RES_X_EFF equ RES_X + 1
 
@@ -38,6 +45,7 @@ section .bss
     input_buffer_length equ $ - input_buffer
 
     snake_ptr resb 8
+    screen_ptr resb 8
     running_flag resb 1
 
 section .data
@@ -45,7 +53,6 @@ section .data
     cursor_home_len equ $ - cursor_home
 
 section .text
-
 
 extern sleep_ms
 extern enable_raw_input
@@ -74,14 +81,26 @@ _start:
     mov r8d, RES_Y - 1              ; Max y
     call Snake_ctor
 
+    ; Alloc screen
+    call Screen_GetSize
+    mov rdi, rax
+    call alloc
+    mov [screen_ptr], rax
+
+    ; Construct Screen
+    mov rdi, [screen_ptr]
+    mov esi, RES_X
+    mov edx, RES_Y
+    call Screen_ctor
+
     mov byte [rel running_flag], 1
 
 .game_loop:
     cmp byte [running_flag], 1
     jne .exit
 
-
-    call update_screen
+    mov rdi, [screen_ptr]
+    call Screen_Clear
 
     call read_user_input
 
@@ -93,7 +112,8 @@ _start:
     lea rsi, [rel draw_snake_node]
     call Snake_Draw
 
-    call draw_screen
+    mov rdi, [screen_ptr]
+    call Screen_Draw
 
     ; Sleep
     mov rdi, 300
@@ -105,9 +125,19 @@ _start:
 
     call disable_raw_input
 
+    ; Deconstruct screen
+    mov rdi, [screen_ptr]
+    call Screen_dtor
+
+    ; Deallocate screen
+    mov rdi, [snake_ptr]
+    call dealloc
+
+    ; Deconstruct snake
     mov rdi, [snake_ptr]
     call Snake_dtor
 
+    ; Deallocate snake
     mov rdi, [snake_ptr]
     call dealloc
 
@@ -116,77 +146,9 @@ _start:
     xor rdi, rdi
     syscall
 
-
-update_screen:
-    call clear_screen
-
-    ret
-
-clear_screen:
-    xor rax, rax
-
-; --- Fill the entire buffer with SCREEN_BACKGROUND_CHAR --- ;
-
-.fill_loop:                                     ; while rax < screen_buffer_size
-    cmp rax, screen_buffer_size
-    je .new_line_loop_setup
-
-    lea rcx, [screen_buffer + rax]
-    mov byte [rcx], SCREEN_BACKGROUND_CHAR
-    
-    inc rax
-    jmp .fill_loop
-
-.new_line_loop_setup:
-    xor rax, rax
-
-.new_line_loop:
-    cmp rax, RES_Y
-    je .exit
-
-    mov rcx, rax
-    imul rcx, RES_X_EFF
-    add rcx, screen_buffer
-    mov byte [rcx], 10
-    
-    inc rax
-    jmp .new_line_loop
-
-.exit:
-    ret
-
-
-draw_screen:
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, cursor_home
-    mov rdx, cursor_home_len
-    syscall
-
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, screen_buffer
-    mov rdx, screen_buffer_size
-    syscall
-
-    ret
-
-get_buffer_index:
-    ; edi = x
-    ; esi = y
-
-    mov eax, esi
-    imul eax, RES_X_EFF
-    add eax, edi
-
-    ret
-
-
 sigint_handler:
     mov byte [rel running_flag], 0
     ret
-
-
 
 ;-----------------------------
 ; Function: read_user_input
@@ -293,7 +255,8 @@ decode_input:
 ; Returns: None
 ;-----------------------------
 draw_snake_node:
-    call get_buffer_index ; Arguments already in the correct registers
-    mov byte [screen_buffer + rax], SNAKE_SYMBOL
+    mov edx, esi
+    mov esi, edi
+    mov rdi, [screen_ptr]
+    call Screen_PlaceSnakeNode
     ret
-
