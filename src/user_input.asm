@@ -22,15 +22,16 @@ read_user_input:
     push r12
     push r13
     push r14
+    sub rsp, 8
 
     ; Default to invalid direction
     mov r14b, SnakeDirection_INVALID
 
     ; Read input into buffer
-    mov rax, SYS_READ
-    mov rdi, STDIN
+    mov eax, SYS_READ
+    mov edi, STDIN
     mov rsi, input_buffer
-    mov rdx, input_buffer_length
+    mov edx, input_buffer_length
     syscall
 
     cmp rax, 0
@@ -42,7 +43,7 @@ read_user_input:
     ; r12 = bytes read
     ; r13 = counter
     ; r14b = proposed direction
-    xor r13, r13
+    xor r13d, r13d
 
 .loop:
     cmp r12, r13
@@ -63,7 +64,8 @@ read_user_input:
 ; end loop
 
 .return:
-    mov al, r14b
+    mov eax, r14d
+    add rsp, 8
     pop r14
     pop r13
     pop r12

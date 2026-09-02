@@ -6,7 +6,7 @@ SYS_WRITE equ 1
 STDOUT equ 1
 SYS_EXIT equ 60
 
-section .data:
+section .data
     failed_to_alloc_msg db "Failed to allocate memory", 10, 0
     failed_to_alloc_msg_len equ $ - failed_to_alloc_msg
 
@@ -21,27 +21,27 @@ section .text
 ; Returns: rax = resulting pointer to allocated memory
 ;-----------------------------
 alloc:
-    mov rax, SYS_MMAP
+    mov eax, SYS_MMAP
     mov rsi, rdi                    ; Set length
-    xor rdi, rdi                    ; Let kernel choose address
-    mov rdx, PROT_READ_WRITE        ; Set readable/writeable
-    mov r10, MAP_PRIVATE_ANONYMOUS  ; Set private/anonymous
+    xor edi, edi                    ; Let kernel choose address
+    mov edx, PROT_READ_WRITE        ; Set readable/writeable
+    mov r10d, MAP_PRIVATE_ANONYMOUS ; Set private/anonymous
     mov r8, -1                      ; No file-descriptor
-    xor r9, r9                      ; Offset = 0
+    xor r9d, r9d                    ; Offset = 0
     syscall
 
     cmp rax, 0
     jge .return
 
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
+    mov eax, SYS_WRITE
+    mov edi, STDOUT
     mov rsi, failed_to_alloc_msg
-    mov rdx, failed_to_alloc_msg_len
+    mov edx, failed_to_alloc_msg_len
     syscall
 
     ;; exit
-    mov rax, SYS_EXIT
-    mov rdi, -1
+    mov eax, SYS_EXIT
+    mov edi, -1
     syscall
 
 .return:
@@ -55,6 +55,6 @@ alloc:
 ; Returns: None
 ;-----------------------------
 dealloc:
-    mov rax, SYS_MUNMAP
+    mov eax, SYS_MUNMAP
     syscall                         ; dealloc function arguments are the same for mmunmap
     ret

@@ -38,7 +38,7 @@ SnakeNode_ConflictingDirections:
     movsx eax, dil
     movsx ecx, sil
     imul eax, ecx
-    cmp dil, 0
+    test eax, eax
     jg .exit_fail
 
 .exit_success:
@@ -59,6 +59,8 @@ SnakeNode_ConflictingDirections:
 ; Returns: None
 ;-----------------------------
 SnakeNode_UpdatePosition:
+    sub rsp, 8
+
     mov cl, [rdi + SnakeNode_direction]
 
     cmp cl, SnakeDirection_UP
@@ -87,12 +89,12 @@ SnakeNode_UpdatePosition:
 
 .move_right:
     inc dword [rdi + SnakeNode_x]
-    jmp .exit
 
 .exit:
     ; All arguments still in place
     call SnakeNode_WrapPosition
 
+    add rsp, 8
     ret
 
 ;-----------------------------

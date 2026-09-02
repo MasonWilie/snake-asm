@@ -16,18 +16,18 @@ global disable_raw_input
 ; Returns:  None
 ;-----------------------------
 enable_raw_input:
-    push rdi
-
     ; Get the current termios
-    mov rax, 16                 ; IOCTL
-    mov rsi, 0x5401             ; TCGETS
+    mov eax, 16                 ; IOCTL
+    mov edi, 0                  ; STDIN
+    mov esi, 0x5401             ; TCGETS
     mov rdx, original_termios
     syscall
 
     ; Copy the original termios into the new buffer
     mov rsi, original_termios
     mov rdi, new_termios
-    mov rcx, Termios_size
+    mov ecx, Termios_size
+    cld
     rep movsb
 
     ; Clear canonical and echo bits
@@ -38,11 +38,10 @@ enable_raw_input:
     mov byte [new_termios + 17 + 6], 0  ; VMIN = 0
     mov byte [new_termios + 17 + 5], 0  ; VTIME = 0
 
-    pop rdi
-
     ; Set the new termios
-    mov rax, 16
-    mov rsi, 0x5402
+    mov eax, 16
+    mov edi, 0                  ; STDIN
+    mov esi, 0x5402             ; TCSETS
     mov rdx, new_termios
     syscall
 
@@ -55,8 +54,9 @@ enable_raw_input:
 ; Returns:  None
 ;-----------------------------
 disable_raw_input:
-    mov rax, 16
-    mov rsi, 0x5402
+    mov eax, 16
+    mov edi, 0                  ; STDIN
+    mov esi, 0x5402             ; TCSETS
     mov rdx, original_termios
     syscall
     ret
