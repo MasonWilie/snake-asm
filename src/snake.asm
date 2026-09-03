@@ -64,19 +64,30 @@ Snake_ctor:
     mov edi, SnakeNode_size
     call alloc
     mov qword [rbx + Snake_head], rax
+
+    ; Head is also the tail until a second node is added
     mov qword [rbx + Snake_tail], rax
 
     ; Construct the head node
     mov rdi, qword [rbx + Snake_head]
     mov esi, ebp
     mov edx, r12d
-    mov rcx, qword [rbx + Snake_tail]
+    mov rcx, 0
     call SnakeNode_ctor
+
+    ; Add the second node, one cell to the right of the head
+    mov r8, [rbx + Snake_head]      ; r8 = head
+    mov esi, [r8 + SnakeNode_x]
+    inc esi
+    mov edx, [r8 + SnakeNode_y]
+    mov rdi, rbx
+    call Snake_AddNode
+
+    xor eax, eax                    ; return success
 
     pop r12
     pop rbp
     pop rbx
-
     ret
 
 ;-----------------------------
@@ -149,6 +160,10 @@ Snake_TrySetDirection:
     ; If the direction is unchanged, do nothing
     mov r8b, byte [rdi + Snake_direction]
     cmp r8b, sil
+    je .exit
+
+    ; If the direction is invalid, do nothing
+    cmp sil, SnakeDirection_INVALID
     je .exit
 
     ; Save args before function call
@@ -235,17 +250,9 @@ Snake_GetDxDyFromDirection:
     xor edx, edx
     ret
 
-;-----------------------------
-; Function: Snake_UpdatePositions
-; Description: Update the position of the snake nodes
-; Args:
-;   rdi = this
-; Returns: None
-;-----------------------------
 Snake_UpdatePositions:
     push r12
     mov r12, rdi                        ; r12 = this
-    
     mov dil, byte [rdi + Snake_direction]
     call Snake_GetDxDyFromDirection     ; eax = dx, edx = dy
 
@@ -256,8 +263,11 @@ Snake_UpdatePositions:
     mov r10d, [r8 + SnakeNode_y]        ; r10d = head->y
     add r10d, edx
 
-    ; Move the tail to the new position
     mov r11, [r12 + Snake_tail]         ; r11 = tail
+    cmp r8, r11
+    je .single_node                     ; head == tail -> only one node
+
+    ; Move the tail to the new position
     mov [r11 + SnakeNode_x], r9d
     mov [r11 + SnakeNode_y], r10d
 
@@ -273,7 +283,14 @@ Snake_UpdatePositions:
     ; Define the new tail
     mov [r12 + Snake_tail], r9
     mov qword [r9 + SnakeNode_nextNode], 0
+    jmp .exit
 
+.single_node:
+    ; Only one node: just update its position in place
+    mov [r8 + SnakeNode_x], r9d
+    mov [r8 + SnakeNode_y], r10d
+
+.exit:
     pop r12
     ret
 
@@ -311,4 +328,57 @@ Snake_Draw:
     pop r13
     pop r12
 
+    ret
+
+;-----------------------------
+; Function: Snake_AddNode
+; Description: Add a node to the end of the snake
+; Args:
+;   rdi = this
+;   esi = x
+;   edx = y
+; Returns: None
+;-----------------------------
+Snake_AddNode:
+    push r12
+    push r13
+    push r14
+    push r15
+    sub rsp, 8
+
+    mov r12, rdi
+    mov r13d, esi
+    mov r14d, edx
+
+    ; Allocate an uninitialized section of memory for the new node
+    mov edi, SnakeNode_size
+    call alloc
+    mov r15, rax                    ; r15 = new node
+
+    mov r8, [r12 + Snake_tail]
+    test r8, r8
+    jz .empty
+
+    mov [r8 + SnakeNode_nextNode], r15
+    mov [r12 + Snake_tail], r15
+    jmp .construct
+
+.empty:
+    mov [r12 + Snake_head], r15
+    mov [r12 + Snake_tail], r15
+    xor r8, r8                      ; prevNode = 0 for construction
+
+.construct:
+    ; Construct node
+    mov rdi, r15
+    mov esi, r13d
+    mov edx, r14d
+    mov rcx, r8
+    call SnakeNode_ctor
+
+    add rsp, 8
+    pop r15
+    pop r14
+    pop r13
+    pop r12
     ret
