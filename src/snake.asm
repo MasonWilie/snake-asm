@@ -3,8 +3,9 @@
 
 ; snake_node.asm
 extern SnakeNode_ctor
-extern SnakeNode_ConflictingDirections
 extern SnakeNode_UpdatePosition
+extern SnakeNode_SetNext
+extern SnakeNode_GetNext
 
 ; memory.asm
 extern alloc
@@ -21,9 +22,11 @@ extern dealloc
 ;  private:
 ;   void Snake_SetDirection(SnakeDirection newDirection);
 ;   void Snake_UpdatePositions();
+;   
+;   Direction direction;
 ;   SnakeNode* head;
+;   SnakeNode* tail;
 ; };
-
 
 
 section .text
@@ -53,20 +56,21 @@ Snake_ctor:
     mov ebp, esi        ; ebp = initial x
     mov r12d, edx       ; r12d = initial y
 
-    ; Set bounds
     mov [rdi + Snake_maxX], ecx
     mov [rdi + Snake_maxY], r8d
+    mov byte [rdi + Snake_direction], SnakeDirection_LEFT
 
     ; Allocate an uninitialized section of memory for the head node
     mov edi, SnakeNode_size
     call alloc
     mov qword [rbx + Snake_head], rax
+    mov qword [rbx + Snake_tail], rax
 
     ; Construct the head node
     mov rdi, qword [rbx + Snake_head]
     mov esi, ebp
     mov edx, r12d
-    mov cl, SnakeDirection_LEFT
+    mov rcx, qword [rbx + Snake_tail]
     call SnakeNode_ctor
 
     pop r12
@@ -82,13 +86,32 @@ Snake_ctor:
 ; Returns: None
 ;-----------------------------
 Snake_dtor:
+    push r8
+    push r9
     sub rsp, 8
 
-    mov rdi, qword [rdi + Snake_head]
+    mov r8, qword [rdi + Snake_head]
+.loop:
+    mov rdi, r8
+    call SnakeNode_GetNext
+    mov r9, rax
+
+    mov rdi, r8
     mov esi, SnakeNode_size
     call dealloc
 
+    cmp r9, 0
+    je .end_loop
+
+    mov r8, r9
+    jmp .loop
+
+.end_loop:
+
     add rsp, 8
+    pop r9
+    pop r8
+
     ret
 
 ;-----------------------------
@@ -123,42 +146,93 @@ Snake_TrySetDirection:
     push r13
     sub rsp, 8
 
-    mov r12, rdi
-    mov r13d, esi
-
-    ; Don't update if new direction is invalid
-    cmp r13b, SnakeDirection_INVALID
+    ; If the direction is unchanged, do nothing
+    mov r8b, byte [rdi + Snake_direction]
+    cmp r8b, sil
     je .exit
 
-    mov rcx, qword [r12 + Snake_head]               ; rcx = SnakeNode* head
+    ; Save args before function call
+    mov r12, rdi                        ; r12 = this
+    mov r13b, sil                       ; r13b = new direction
 
-    ; If the direction doesn't actually change, move on
-    cmp r13b, [rcx + SnakeNode_direction]
-    je .exit
+    mov dil, r13b
+    call Snake_GetDxDyFromDirection     ; eax = dx, edx = dy
 
-    mov rdx, qword [rcx + SnakeNode_nextNode]       ; rdx = head->nextNode
-    
-    ; If there is no next node, can be any direction
-    cmp rdx, 0
+    mov r8, [r12 + Snake_head]          ; r8 = head
+
+    ; If there is no next node, nothing to conflict with
+    mov r11, [r8 + SnakeNode_nextNode]  ; r11 = head->next
+    cmp r11, 0
     je .set_direction
 
-    ; Check to see if the new direction conflicts with the next node
-    mov dil, [rdx + SnakeNode_direction]
-    mov sil, r13b
-    call SnakeNode_ConflictingDirections
-    test al, al
-    jnz .exit
+    ; Simluate moving the head in that direction
+    mov r9d, [r8 + SnakeNode_x]         ; r9d = head->x
+    mov r10d, [r8 + SnakeNode_y]        ; r10d = head->y
+    add r9d, eax
+    add r10d, edx
 
-    ; Recompute head address because it was clobbered
-    mov rcx, [r12 + Snake_head]
+    mov eax, [r11 + SnakeNode_x]        ; eax = head->nextNode->x
+    mov edx, [r11 + SnakeNode_y]        ; edx = head->nextNode->y
+
+    cmp r9d, eax
+    jne .set_direction
+
+    cmp r10d, edx
+    je .exit
 
 .set_direction:
-    mov byte [rcx + SnakeNode_direction], r13b
+    mov byte [r12 + Snake_direction], r13b
 
 .exit:
     add rsp, 8
     pop r13
     pop r12
+    ret
+
+
+;-----------------------------
+; Function: Snake_GetDxDyFromDirection
+; Description: Get the change in X and Y given the direction
+; Args: dil = direction
+; Returns: eax = dx, edx = dy
+;-----------------------------
+Snake_GetDxDyFromDirection:
+    cmp dil, SnakeDirection_UP
+    je .up
+
+    cmp dil, SnakeDirection_DOWN
+    je .down
+
+    cmp dil, SnakeDirection_LEFT
+    je .left
+
+    cmp dil, SnakeDirection_RIGHT
+    je .right
+
+    jmp .unknown_direction
+.up:
+    xor eax, eax
+    mov edx, -1
+    ret
+
+.down:
+    xor eax, eax
+    mov edx, 1
+    ret
+
+.left:
+    mov eax, -1
+    xor edx, edx
+    ret
+
+.right:
+    mov eax, 1
+    xor edx, edx
+    ret
+
+.unknown_direction:
+    xor eax, eax
+    xor edx, edx
     ret
 
 ;-----------------------------
@@ -169,31 +243,38 @@ Snake_TrySetDirection:
 ; Returns: None
 ;-----------------------------
 Snake_UpdatePositions:
-    push rbx
     push r12
-    push r13
+    mov r12, rdi                        ; r12 = this
+    
+    mov dil, byte [rdi + Snake_direction]
+    call Snake_GetDxDyFromDirection     ; eax = dx, edx = dy
 
-    mov rbx, [rdi + Snake_head]
-    mov r12d, [rdi + Snake_maxX]
-    mov r13d, [rdi + Snake_maxY]
+    ; Simluate moving the head in that direction
+    mov r8, [r12 + Snake_head]          ; r8 = head
+    mov r9d, [r8 + SnakeNode_x]         ; r9d = head->x
+    add r9d, eax
+    mov r10d, [r8 + SnakeNode_y]        ; r10d = head->y
+    add r10d, edx
 
-.loop:
+    ; Move the tail to the new position
+    mov r11, [r12 + Snake_tail]         ; r11 = tail
+    mov [r11 + SnakeNode_x], r9d
+    mov [r11 + SnakeNode_y], r10d
 
-    mov rdi, rbx
-    mov esi, r12d
-    mov edx, r13d
-    call SnakeNode_UpdatePosition
+    ; Save old tail's old prev
+    mov r9, [r11 + SnakeNode_prevNode]
 
-    mov rbx, [rbx + SnakeNode_nextNode]
-    cmp rbx, 0
-    jne .loop
+    ; Define the new head
+    mov [r12 + Snake_head], r11
+    mov [r8 + SnakeNode_prevNode], r11
+    mov qword [r11 + SnakeNode_prevNode], 0
+    mov [r11 + SnakeNode_nextNode], r8
 
-; End loop
+    ; Define the new tail
+    mov [r12 + Snake_tail], r9
+    mov qword [r9 + SnakeNode_nextNode], 0
 
-    pop r13
     pop r12
-    pop rbx
-
     ret
 
 ;-----------------------------

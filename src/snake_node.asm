@@ -3,8 +3,9 @@
 section .text
 
 global SnakeNode_ctor
-global SnakeNode_ConflictingDirections
 global SnakeNode_UpdatePosition
+global SnakeNode_SetNext
+global SnakeNode_GetNext
 
 ;-----------------------------
 ; Function: SnakeNode_ctor
@@ -13,40 +14,36 @@ global SnakeNode_UpdatePosition
 ;   rdi = SnakeNode* (pre-allocated)
 ;   esi = x
 ;   edx = y
-;   cl = direction
+;   rcx = SnakeNode* prevNode
 ; Returns:  None (Constructs in-place)
 ;-----------------------------
 SnakeNode_ctor:
     mov dword [rdi + SnakeNode_x], esi
     mov dword [rdi + SnakeNode_y], edx
-    mov byte [rdi + SnakeNode_direction], cl
+    mov qword [rdi + SnakeNode_prevNode], rcx
     mov qword [rdi + SnakeNode_nextNode], 0
     ret
 
 ;-----------------------------
-; Function: SnakeNode_ConflictingDirections
-; Description: Check if the directions oppose eachother
-; Args: dil = direction one, sil = direction two
-; Returns: al = 0 if not conflicting, 1 if conflicting
+; Function: SnakeNode_SetNext
+; Description: Set the next node
+; Args:
+;   rdi = this
+;   rsi = next
+; Returns: rax = result
 ;-----------------------------
-SnakeNode_ConflictingDirections:
-    ; Not conflicting if they are the same direction
-    cmp dil, sil
-    je .exit_success
-    
-    ; If they are the same sign, then they are conflicting
-    movsx eax, dil
-    movsx ecx, sil
-    imul eax, ecx
-    test eax, eax
-    jg .exit_fail
-
-.exit_success:
-    xor al, al
+SnakeNode_SetNext:
+    mov [rdi + SnakeNode_nextNode], rsi
     ret
 
-.exit_fail:
-    mov al, 1
+;-----------------------------
+; Function: SnakeNode_GetNext
+; Description: Get the next node
+; Args: rdi = this
+; Returns: rax = this->nextNode
+;-----------------------------
+SnakeNode_GetNext:
+    mov rax, [rdi + SnakeNode_nextNode]
     ret
 
 ;-----------------------------
@@ -56,42 +53,24 @@ SnakeNode_ConflictingDirections:
 ;   rdi = this
 ;   esi = max x
 ;   edx = max y
+;   ecx = dx
+;   r8d = dy
 ; Returns: None
 ;-----------------------------
 SnakeNode_UpdatePosition:
     sub rsp, 8
 
-    mov cl, [rdi + SnakeNode_direction]
+    ; Move X
+    mov r9d, [rdi + SnakeNode_x]
+    add r9d, ecx
+    mov [rdi + SnakeNode_x], r9d
 
-    cmp cl, SnakeDirection_UP
-    je .move_up
+    ; Move Y
+    mov r9d, [rdi + SnakeNode_y]
+    add r9d, r8d
+    mov [rdi + SnakeNode_y], r9d
 
-    cmp cl, SnakeDirection_DOWN
-    je .move_down
-
-    cmp cl, SnakeDirection_LEFT
-    je .move_left
-
-    cmp cl, SnakeDirection_RIGHT
-    je .move_right
-
-.move_up:
-    dec dword [rdi + SnakeNode_y]
-    jmp .exit
-
-.move_down:
-    inc dword [rdi + SnakeNode_y]
-    jmp .exit
-
-.move_left:
-    dec dword [rdi + SnakeNode_x]
-    jmp .exit
-
-.move_right:
-    inc dword [rdi + SnakeNode_x]
-
-.exit:
-    ; All arguments still in place
+    ; rdi = this, esi = max x, edx = max y
     call SnakeNode_WrapPosition
 
     add rsp, 8

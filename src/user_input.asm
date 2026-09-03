@@ -1,4 +1,4 @@
-%include "snake_node.inc"
+%include "snake.inc"
 
 SYS_READ equ 0
 STDIN equ 0
