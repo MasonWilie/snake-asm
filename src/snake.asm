@@ -3,7 +3,6 @@
 
 ; snake_node.asm
 extern SnakeNode_ctor
-extern SnakeNode_UpdatePosition
 extern SnakeNode_SetNext
 extern SnakeNode_GetNext
 
@@ -103,9 +102,7 @@ Snake_dtor:
 
     mov r8, qword [rdi + Snake_head]
 .loop:
-    mov rdi, r8
-    call SnakeNode_GetNext
-    mov r9, rax
+    mov r9, [r8 + SnakeNode_nextNode]
 
     mov rdi, r8
     mov esi, SnakeNode_size
@@ -250,6 +247,12 @@ Snake_GetDxDyFromDirection:
     xor edx, edx
     ret
 
+;-----------------------------
+; Function: Snake_UpdatePositions
+; Description: Push the tail to the head
+; Args: rdi = this
+; Returns: None
+;-----------------------------
 Snake_UpdatePositions:
     push r12
     mov r12, rdi                        ; r12 = this
@@ -291,8 +294,54 @@ Snake_UpdatePositions:
     mov [r8 + SnakeNode_y], r10d
 
 .exit:
+    mov rdi, r12
+    call Snake_WrapHeadPosition
+
     pop r12
     ret
+
+
+;-----------------------------
+; Function: Snake_WrapHeadPosition
+; Description: Wrap the head position into the screen bounds
+; Args: rdi = this
+; Returns: None
+;-----------------------------
+Snake_WrapHeadPosition:
+    mov rsi, [rdi + Snake_head]     ; rsi = head
+    mov r8d, [rsi + SnakeNode_x]    ; r8d = head->x
+    mov r9d, [rsi + SnakeNode_y]    ; r9d = head->y
+    mov r10d, [rdi + Snake_maxX]    ; r10d = this->maxX
+    mov r11d, [rdi + Snake_maxY]    ; r11d = this->maxY
+    
+.check_lower_x:
+    cmp r8d, 0
+    jge .check_upper_x
+    mov dword [rsi + SnakeNode_x], r10d
+    jmp .check_lower_y
+
+.check_upper_x:
+    cmp r8d, r10d
+    jle .check_lower_y
+    mov dword [rsi + SnakeNode_x], 0
+
+.check_lower_y:
+    cmp r9d, 0
+    jge .check_upper_y
+    mov dword [rsi + SnakeNode_y], r11d
+    jmp .exit
+
+.check_upper_y:
+    cmp r9d, r11d
+    jle .exit
+    mov dword [rsi + SnakeNode_y], 0
+
+.exit:
+
+    ret
+
+
+
 
 ;-----------------------------
 ; Function: Snake_Draw
