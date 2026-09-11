@@ -4,6 +4,7 @@ section .text
 
 global Egg_ctor
 global Egg_CheckAndUpdate
+global Egg_Draw
 
 ;-----------------------------
 ; Function: Egg_ctor
@@ -189,3 +190,20 @@ Egg_PlaceEgg:
     mov [r8 + r11], r10b
 
     ret
+
+;-----------------------------
+; Function: Egg_Draw
+; Description: Draw the egg
+; Args: rdi = this
+; Returns: None
+;-----------------------------
+Egg_Draw:
+    mov r8, [rdi + Egg_buffer]      ; r8 = screen buffer
+    mov r9, [rdi + Egg_eggIdx]     ; r9 = egg IDX
+    mov r10b, [rdi + Egg_eggChar]   ; r10b = egg char
+
+    mov [r8 + r9], r10b
+
+    ret
+
+

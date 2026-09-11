@@ -28,6 +28,7 @@ extern read_user_input
 ; egg.asm
 extern Egg_ctor
 extern Egg_CheckAndUpdate
+extern Egg_Draw
 
 ; Helper Constants
 SYS_EXIT equ 60
@@ -120,6 +121,20 @@ _start:
     mov rdi, [rel snake_ptr]
     lea rsi, [rel draw_snake_node]
     call Snake_Draw
+
+    mov rdi, [rel egg_ptr]
+    call Egg_CheckAndUpdate
+
+    cmp al, 0
+    je .do_not_grow
+
+    ; mov rdi, [rel snake_ptr]
+    ; call Snake_Grow
+
+.do_not_grow:
+
+    mov rdi, [rel egg_ptr]
+    call Egg_Draw
 
     mov rdi, [rel screen_ptr]
     call Screen_Draw
