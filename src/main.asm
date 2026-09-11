@@ -1,5 +1,7 @@
 %include "snake_node.inc"
 %include "snake.inc"
+%include "egg.inc"
+%include "screen.inc"
 
 ; snake.asm
 extern Snake_ctor
@@ -18,21 +20,23 @@ extern Screen_dtor
 extern Screen_PlaceSnakeNode
 extern Screen_Clear
 extern Screen_Draw
+extern Screen_GetBuffer
 
 ; user_input.asm
 extern read_user_input
+
+; egg.asm
+extern Egg_ctor
+extern Egg_CheckAndUpdate
 
 ; Helper Constants
 SYS_EXIT equ 60
 SIGINT equ 2
 
-; Screen Constants
-RES_X equ 30
-RES_Y equ 10
-
 section .bss
     snake_ptr resq 1
     screen_ptr resq 1
+    egg_ptr resq 1
     running_flag resb 1
 
 section .text
@@ -46,7 +50,7 @@ global _start
 
 _start:
     and rsp, -16
-    sub rsp, 8
+    push r8
 
     ; Set up signal and raw input handler
     mov edi, SIGINT
@@ -69,6 +73,7 @@ _start:
 
     ; Alloc screen
     call Screen_GetSize
+    mov r8, rax
     mov rdi, rax
     call alloc
     mov [rel screen_ptr], rax
@@ -78,6 +83,24 @@ _start:
     mov esi, RES_X
     mov edx, RES_Y
     call Screen_ctor
+
+    ; Alloc egg
+    mov edi, Egg_size
+    call alloc
+    mov [rel egg_ptr], rax
+
+    ; Get the screen buffer and length
+    mov rdi, [rel screen_ptr]
+    call Screen_GetBuffer ; rax = screen buffer ptr, rdx = length
+    
+    ; Construct egg
+    mov rdi, [rel egg_ptr]
+    mov rsi, rax                        ; rax = screen buffer ptr
+    mov cl, BACKGROUND_SYMBOL
+    mov r8b, SNAKE_SYMBOL
+    mov r9b, EGG_SYMBOL
+    call Egg_ctor
+     
 
     mov byte [rel running_flag], 1
 
@@ -126,6 +149,8 @@ _start:
     ; Deallocate snake
     mov rdi, [rel snake_ptr]
     call dealloc
+
+    pop r8
 
     ;; exit
     mov eax, SYS_EXIT

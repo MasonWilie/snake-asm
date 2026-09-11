@@ -7,5 +7,6 @@ RES_X_EFF equ RES_X + 1
 
 SNAKE_SYMBOL equ '#'
 BACKGROUND_SYMBOL equ ' '
+EGG_SYMBOL equ 'o'
 
 %endif

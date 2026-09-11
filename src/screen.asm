@@ -43,6 +43,7 @@ global Screen_dtor
 global Screen_Clear
 global Screen_Draw
 global Screen_PlaceSnakeNode
+global Screen_GetBuffer
 
 ;-----------------------------
 ; Function: Screen_GetSize
@@ -80,6 +81,9 @@ Screen_ctor:
     call alloc
 
     mov [r12 + Screen_buffer], rax
+
+    mov rdi, r12
+    call Screen_Clear
 
     add rsp, 8
     pop r12
@@ -194,4 +198,17 @@ Screen_PlaceSnakeNode:
     mov r8, [rdi + Screen_buffer]       ; r8 = this->buffer
     mov byte [r8 + rdx], SNAKE_SEGMENT_CHAR
 
+    ret
+
+;-----------------------------
+; Function: Screen_GetBuffer
+; Description: Get the screen buffer
+; Args: rdi = this
+; Returns:
+;   rax = screen buffer ptr
+;   rdx = screen buffer size
+;-----------------------------
+Screen_GetBuffer:
+    mov rax, [rdi + Screen_buffer]
+    movsxd rdx, dword [rdi + Screen_buffer_size]
     ret
