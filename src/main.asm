@@ -8,6 +8,7 @@ extern Snake_ctor
 extern Snake_dtor
 extern Snake_Update
 extern Snake_Draw
+extern Snake_Grow
 
 ; memory.asm
 extern alloc
@@ -128,8 +129,8 @@ _start:
     cmp al, 0
     je .do_not_grow
 
-    ; mov rdi, [rel snake_ptr]
-    ; call Snake_Grow
+    mov rdi, [rel snake_ptr]
+    call Snake_Grow
 
 .do_not_grow:
 

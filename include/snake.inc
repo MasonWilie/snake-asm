@@ -11,7 +11,9 @@ Snake_head equ 0
 Snake_tail equ 8
 Snake_maxX equ 16
 Snake_maxY equ 20
-Snake_direction equ 24
-Snake_size equ 32           ; 7 bytes of padding
+Snake_prevTailX equ 24
+Snake_prevTailY equ 28
+Snake_direction equ 32
+Snake_size equ 40           ; 7 bytes of padding
 
 %endif

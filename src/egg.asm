@@ -57,7 +57,7 @@ Egg_CheckAndUpdate:
     mov r15b, [r12 + Egg_snakeChar]     ; r15b = snake char
 
     cmp r15b, [r13 + r14]               ; Check if the egg has been overwritten by the snake
-    jne .exit
+    jne .exit_false
 
     mov rdi, r12
     call Egg_UpdatePosition

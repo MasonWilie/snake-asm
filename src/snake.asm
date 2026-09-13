@@ -25,6 +25,10 @@ extern dealloc
 ;   Direction direction;
 ;   SnakeNode* head;
 ;   SnakeNode* tail;
+;   int tailPrevX;
+;   int tailPrevY;
+;   int maxX;
+;   int maxY;
 ; };
 
 
@@ -34,6 +38,7 @@ section .text
     global Snake_dtor
     global Snake_Update
     global Snake_Draw
+    global Snake_Grow
 
 ;-----------------------------
 ; Function: Snake_ctor
@@ -81,6 +86,13 @@ Snake_ctor:
     mov edx, [r8 + SnakeNode_y]
     mov rdi, rbx
     call Snake_AddNode
+
+    mov r8, [rbx + Snake_tail]
+    mov r9d, [r8 + SnakeNode_x]
+    mov r10d, [r8 + SnakeNode_y]
+
+    mov [rbx + Snake_prevTailX], r8d
+    mov [rbx + Snake_prevTailY], r9d
 
     xor eax, eax                    ; return success
 
@@ -256,6 +268,16 @@ Snake_GetDxDyFromDirection:
 Snake_UpdatePositions:
     push r12
     mov r12, rdi                        ; r12 = this
+
+    ; Store tail prev x and y
+    mov r8, [r12 + Snake_tail]
+    mov r9d, [r8 + SnakeNode_x]
+    mov r10d, [r8 + SnakeNode_y]
+
+    mov [r12 + Snake_prevTailX], r8d
+    mov [r12 + Snake_prevTailY], r9d
+
+    ; Get direction dx/dy
     mov dil, byte [rdi + Snake_direction]
     call Snake_GetDxDyFromDirection     ; eax = dx, edx = dy
 
@@ -431,3 +453,20 @@ Snake_AddNode:
     pop r13
     pop r12
     ret
+
+;-----------------------------
+; Function: Snake_Grow
+; Description: Grow the snake by one node
+; Args: rdi = this
+; Returns: None
+;-----------------------------
+Snake_Grow:
+    sub rsp, 8
+
+    mov esi, [rdi + Snake_prevTailX]
+    mov edx, [rdi + Snake_prevTailY]
+    call Snake_AddNode
+
+    add rsp, 8
+    ret
+
