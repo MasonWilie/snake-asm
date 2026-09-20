@@ -51,6 +51,12 @@ extern sig_install
 
 global _start
 
+;-----------------------------
+; Function: _start
+; Description: Initialize and run the game loop
+; Args: None
+; Returns: None
+;-----------------------------
 _start:
     and rsp, -16
 
@@ -184,6 +190,12 @@ _start:
     xor edi, edi
     syscall
 
+;-----------------------------
+; Function: sigint_handler
+; Description: Stop the game loop after SIGINT
+; Args: None
+; Returns: None
+;-----------------------------
 sigint_handler:
     mov byte [rel running_flag], 0
     ret

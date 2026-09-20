@@ -16,8 +16,8 @@ section .text
 ;-----------------------------
 ; Function: sig_install
 ; Description: Install a signal handler
-; Args:     rdi = sig number, rsi = handler function pointer
-; Returns:  None
+; Args: rdi = signal number, rsi = handler function pointer
+; Returns: None
 ;-----------------------------
 sig_install:
     mov r8, rsi                                     ; r8 = handler ptr
@@ -41,8 +41,8 @@ sig_install:
 ;-----------------------------
 ; Function: sig_return
 ; Description: Stub to return from the signal action
-; Args:     None
-; Returns:  None
+; Args: None
+; Returns: None
 ;-----------------------------
 sig_return:
     mov rax, SYSCALL_SIG_RETURN

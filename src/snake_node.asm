@@ -12,7 +12,7 @@ global SnakeNode_ctor
 ;   esi = x
 ;   edx = y
 ;   rcx = SnakeNode* prevNode
-; Returns:  None (Constructs in-place)
+; Returns: None (constructs in-place)
 ;-----------------------------
 SnakeNode_ctor:
     mov dword [rdi + SnakeNode_x], esi

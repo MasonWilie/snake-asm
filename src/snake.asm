@@ -50,7 +50,7 @@ section .text
 ;   edx = Initial y position
 ;   ecx = Max x position
 ;   r8d = Max y position
-; Returns:  rax = result
+; Returns: rax = result
 ;-----------------------------
 Snake_ctor:
     push rbx

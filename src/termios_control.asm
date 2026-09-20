@@ -12,8 +12,8 @@ global disable_raw_input
 ;-----------------------------
 ; Function: enable_raw_input
 ; Description: Disabled cononical input and enables raw for non-buffered input
-; Args:     None
-; Returns:  None
+; Args: None
+; Returns: None
 ;-----------------------------
 enable_raw_input:
     ; Get the current termios
@@ -50,8 +50,8 @@ enable_raw_input:
 ;-----------------------------
 ; Function: disable_raw_input
 ; Description: Reverts the termios to the original struct
-; Args:     None
-; Returns:  None
+; Args: None
+; Returns: None
 ;-----------------------------
 disable_raw_input:
     mov eax, 16

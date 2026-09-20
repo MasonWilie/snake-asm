@@ -7,8 +7,9 @@ global sleep_ms
 
 ;-----------------------------
 ; Function: sleep_ms
-; Args:     rdi = ms to sleep
-; Returns:  rax = None
+; Description: Sleep for the specified duration
+; Args: rdi = milliseconds to sleep
+; Returns: None
 ;-----------------------------
 sleep_ms:
     mov rax, rdi
