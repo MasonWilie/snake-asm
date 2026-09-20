@@ -92,8 +92,8 @@ Snake_ctor:
     mov r9d, [r8 + SnakeNode_x]
     mov r10d, [r8 + SnakeNode_y]
 
-    mov [rbx + Snake_prevTailX], r8d
-    mov [rbx + Snake_prevTailY], r9d
+    mov [rbx + Snake_prevTailX], r9d
+    mov [rbx + Snake_prevTailY], r10d
 
     xor eax, eax                    ; return success
 
@@ -275,8 +275,8 @@ Snake_UpdatePositions:
     mov r9d, [r8 + SnakeNode_x]
     mov r10d, [r8 + SnakeNode_y]
 
-    mov [r12 + Snake_prevTailX], r8d
-    mov [r12 + Snake_prevTailY], r9d
+    mov [r12 + Snake_prevTailX], r9d
+    mov [r12 + Snake_prevTailY], r10d
 
     ; Get direction dx/dy
     mov dil, byte [rdi + Snake_direction]
@@ -504,5 +504,3 @@ Snake_Overlaps:
 
     xor al, al
     ret
-
-

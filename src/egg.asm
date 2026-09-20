@@ -170,13 +170,17 @@ Egg_PlaceEgg:
     mov r10b, [rdi + Egg_eggChar]       ; r10b = egg char
     xor r11, r11                        ; r11 = buffer index
     xor rdx, rdx                        ; rdx = background characters encountered
+    mov rax, [rdi + Egg_bufferLen]
 
 .loop:
-    cmp rsi, rdx
-    je .loop_exit
+    cmp r11, rax
+    je .not_found
 
     cmp [r8 + r11], r9b
     jne .continue
+
+    cmp rdx, rsi
+    je .found
 
     inc rdx
 
@@ -184,11 +188,13 @@ Egg_PlaceEgg:
     inc r11
     jmp .loop
 
-.loop_exit:
+.found:
 
     mov [rdi + Egg_eggIdx], r11
     mov [r8 + r11], r10b
+    ret
 
+.not_found:
     ret
 
 ;-----------------------------
@@ -205,5 +211,3 @@ Egg_Draw:
     mov [r8 + r9], r10b
 
     ret
-
-

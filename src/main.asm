@@ -53,7 +53,6 @@ global _start
 
 _start:
     and rsp, -16
-    push r8
 
     ; Set up signal and raw input handler
     mov edi, SIGINT
@@ -147,7 +146,7 @@ _start:
     call Screen_Draw
 
     ; Sleep
-    mov edi, 300
+    mov edi, 100
     call sleep_ms
 
     jmp .game_loop
@@ -161,6 +160,8 @@ _start:
     call Screen_dtor
 
     ; Deallocate screen
+    call Screen_GetSize
+    mov esi, eax
     mov rdi, [rel screen_ptr]
     call dealloc
 
@@ -170,9 +171,13 @@ _start:
 
     ; Deallocate snake
     mov rdi, [rel snake_ptr]
+    mov esi, Snake_size
     call dealloc
 
-    pop r8
+    ; Deallocate egg
+    mov rdi, [rel egg_ptr]
+    mov esi, Egg_size
+    call dealloc
 
     ;; exit
     mov eax, SYS_EXIT
