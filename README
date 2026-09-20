@@ -1,1 +1,10 @@
-This game doesn't work yet
+# Snake ASM
+
+Build and run on Linux with NASM and `ld` installed
+
+```sh
+make
+./bin/main
+```
+
+Use `W`, `A`, `S`, and `D` to move. Press `Ctrl-C` to quit.
