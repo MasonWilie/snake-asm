@@ -39,6 +39,7 @@ section .text
     global Snake_Update
     global Snake_Draw
     global Snake_Grow
+    global Snake_Overlaps
 
 ;-----------------------------
 ; Function: Snake_ctor
@@ -469,4 +470,39 @@ Snake_Grow:
 
     add rsp, 8
     ret
+
+;-----------------------------
+; Function: Snake_Overlaps
+; Description: Checks if there are overlapping segments in the snake
+; Args: rdi = this
+; Returns: al = there are overlapping segments
+;-----------------------------
+Snake_Overlaps:
+    mov r8, [rdi + Snake_head]
+    mov r10, [r8 + SnakeNode_nextNode]  ; r10 = head->next
+    mov r9d, [r8 + SnakeNode_y]         ; r9d = head->y
+    mov r8d, [r8 + SnakeNode_x]         ; r8d = head->x
+
+.loop:
+    cmp r10, 0
+    je .loop_end
+
+    cmp [r10 + SnakeNode_x], r8d
+    jne .continue
+
+    cmp [r10 + SnakeNode_y], r9d
+    jne .continue
+
+    mov al, 1
+    ret
+
+.continue:
+    mov r10, [r10 + SnakeNode_nextNode]
+    jmp .loop
+
+.loop_end:
+
+    xor al, al
+    ret
+
 

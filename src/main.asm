@@ -9,6 +9,7 @@ extern Snake_dtor
 extern Snake_Update
 extern Snake_Draw
 extern Snake_Grow
+extern Snake_Overlaps
 
 ; memory.asm
 extern alloc
@@ -118,6 +119,11 @@ _start:
     mov sil, al
     mov rdi, [rel snake_ptr]
     call Snake_Update
+
+    mov rdi, [rel snake_ptr]
+    call Snake_Overlaps
+    test al, al
+    jnz .exit
 
     mov rdi, [rel snake_ptr]
     lea rsi, [rel draw_snake_node]
